@@ -46,7 +46,7 @@ end
 
 --[[ This Logs the damage done for every unit ]]
 local logDamage = function(...)
-	local _,_,_, SourceGUID, _,_,_, DestGUID, _,_,_, spellID, _, school, Amount, a, b, c = ...
+	local _,_,_, SourceGUID, _,_,_, DestGUID, _,_,_, spellID, _, school, Amount, a, b, c = CombatLogGetCurrentEventInfo()
 	-- Chat Output for Debugging
 --	if SourceGUID == _G.UnitGUID('player') then
 --		print(spellID)
@@ -76,7 +76,7 @@ end
 
 --[[ This Logs the swings (damage) done for every unit ]]
 local logSwing = function(...)
-	local _,_,_, SourceGUID, _,_,_, GUID, _,_,_, Amount = ...
+	local _,_,_, SourceGUID, _,_,_, GUID, _,_,_, Amount = CombatLogGetCurrentEventInfo()
 	Data[GUID].dmgTaken_P = Data[GUID].dmgTaken_P + Amount
 	Data[GUID].dmgTaken = Data[GUID].dmgTaken + Amount
 	Data[GUID].hits_taken = Data[GUID].hits_taken + 1
@@ -88,7 +88,7 @@ end
 --[[ This Logs the healing done for every unit
 		 !!~counting selfhealing only for now~!!]]
 local logHealing = function(...)
-	local _,_,_, SourceGUID, _,_,_, DestGUID, _,_,_, spellID, _,_, Amount = ...
+	local _,_,_, SourceGUID, _,_,_, DestGUID, _,_,_, spellID, _,_, Amount = CombatLogGetCurrentEventInfo()
 	Data[DestGUID].heal_taken = Data[DestGUID].heal_taken + Amount
 	Data[DestGUID].heal_hits_taken = Data[DestGUID].heal_hits_taken + 1
 	Data[SourceGUID].heal_done = Data[SourceGUID].heal_done + Amount
@@ -98,7 +98,7 @@ end
 
 --[[ This Logs the last action done for every unit ]]
 local addAction = function(...)
-	local _,_,_, sourceGUID, _,_,_,_, destName, _,_,_, spellName = ...
+	local _,_,_, sourceGUID, _,_,_,_, destName, _,_,_, spellName = CombatLogGetCurrentEventInfo()
 	if not spellName then return end
 	if sourceGUID == _G.UnitGUID('player') then
 		local icon = select(3, _G.GetSpellInfo(spellName))
@@ -117,7 +117,7 @@ local EVENTS = {
 	['SWING_DAMAGE'] = logSwing,
 	['SPELL_HEAL'] = logHealing,
 	['SPELL_PERIODIC_HEAL'] = logHealing,
-	['UNIT_DIED'] = function(...) Data[select(8, ...)] = nil end,
+	['UNIT_DIED'] = function(...) Data[select(8, CombatLogGetCurrentEventInfo())] = nil end,
 	['SPELL_CAST_SUCCESS'] = addAction
 }
 
@@ -172,7 +172,7 @@ function NeP.CombatTracker.SpellDamage(_, unit, spellID)
 end
 
 NeP.Listener:Add('NeP_CombatTracker', 'COMBAT_LOG_EVENT_UNFILTERED', function(...)
-	local _, EVENT, _, SourceGUID, _,_,_, DestGUID = ...
+	local _, EVENT, _, SourceGUID, _,_,_, DestGUID = CombatLogGetCurrentEventInfo()
 	-- Add the unit to our data if we dont have it
 	addToData(SourceGUID)
 	addToData(DestGUID)
@@ -180,7 +180,7 @@ NeP.Listener:Add('NeP_CombatTracker', 'COMBAT_LOG_EVENT_UNFILTERED', function(..
 	Data[DestGUID].lastHit_taken = _G.GetTime()
 	Data[SourceGUID].lastHit_done = _G.GetTime()
 	-- Add the amount of dmg/heak
-	if EVENTS[EVENT] then EVENTS[EVENT](...) end
+	if EVENTS[EVENT] then EVENTS[EVENT](CombatLogGetCurrentEventInfo()) end
 end)
 
 NeP.Listener:Add('NeP_CombatTracker', 'PLAYER_REGEN_ENABLED', function()
